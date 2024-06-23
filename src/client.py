@@ -8,7 +8,7 @@ from dateutil.parser import parse
 
 
 def fetch_usage_data():
-    response = requests.get("http://localhost:8000/usage")  # TODO fetch port from env
+    response = requests.get("http://localhost:8000/usage")
     if response.status_code == 200:
         return response.json()["usage"]
     else:
@@ -16,7 +16,6 @@ def fetch_usage_data():
         return None
 
 
-# TODO move to utils
 def format_timestamp(timestamp: str) -> str:
     date_time = parse(timestamp)
     formatted_date_time = date_time.strftime("%Y-%m-%d %H:%M")
@@ -27,20 +26,26 @@ def date_obj(timestamp: str) -> datetime:
     return parse(timestamp)
 
 
+MESSAGE_ID_FIELD = "message_id"
+TIMESTAMP_FIELD = "timestamp"
+REPORT_NAME_FIELD = "report_name"
+CREDITS_USED_FIELD = "credits_used"
+DATE_FIELD = "date"
+
+
 def main():
     st.title("Credit Usage Dashboard")
     usage_data = fetch_usage_data()
     if usage_data:
         # Convert usage data to a DataFrame
         usage_df = pd.DataFrame(usage_data)
-        usage_df['formatted_timestamp'] = usage_df['timestamp'].apply(format_timestamp)
         # Create a bar chart of daily credit usage
-        usage_df['date'] = usage_df['timestamp'].apply(date_obj).apply(lambda x: x.date())
-        chart_data = usage_df.groupby('date')['credits'].sum().reset_index()
+        usage_df[DATE_FIELD] = usage_df[TIMESTAMP_FIELD].apply(date_obj).apply(lambda x: x.date())
+        chart_data = usage_df.groupby(DATE_FIELD)[CREDITS_USED_FIELD].sum().reset_index()
         chart = alt.Chart(chart_data).mark_bar().encode(
             x='date:T',
-            y='credits:Q',
-            tooltip=['date', 'credits']
+            y='credits_used:Q',
+            tooltip=['date', CREDITS_USED_FIELD]
         ).properties(
             width=800,
             height=400,
@@ -61,9 +66,9 @@ def main():
         else:
             usage_df = usage_df.sort_values(by=sort_column, ascending=False)
 
-        # Display data table with headers Message ID, Timestamp, Report Name, Credits
-        st.dataframe(usage_df[["id", "timestamp", "report_name", "credits"]].style.format({
-            "credits": "{:.2f}"
+        table_fields = [MESSAGE_ID_FIELD, TIMESTAMP_FIELD, REPORT_NAME_FIELD, CREDITS_USED_FIELD]
+        st.dataframe(usage_df[table_fields].style.format({
+            CREDITS_USED_FIELD: "{:.2f}"
         }))
 
 
