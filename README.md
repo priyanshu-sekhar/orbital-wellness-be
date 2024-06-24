@@ -1,4 +1,4 @@
-# FastAPI Application
+# Orbital Wellness Backend
 
 This is a FastAPI application exposing Orbital Wellness API endpoints. It currently exposes the following endpoints:
 - `GET /usage`: Returns the usage data for the current billing period
@@ -8,9 +8,8 @@ This is a FastAPI application exposing Orbital Wellness API endpoints. It curren
 The project is structured as follows:
 
 - `src/main.py`: This is the main entry point of the application. It defines the FastAPI application and the API endpoints.
-- `src/helpers.py`: This file contains helper functions used throughout the application.
-- `src/models.py`: This file contains the data models used in the application.
-- `.venv/lib/python3.10/site-packages/httpx/_transports/default.py`: This file is part of the httpx library, which is used for making HTTP requests.
+- `src/helpers.py`: This file contains helper functions used throughout the application like for fetching data from api or calculating usage.
+- `src/models.py`: This file contains the pydantic data models used in the application.
 - `tests`: This directory contains the test cases for the application.
 
 ## Setup Instructions
