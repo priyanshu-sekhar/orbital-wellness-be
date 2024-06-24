@@ -12,7 +12,7 @@ class Message(BaseModel):
 
 class Report(BaseModel):
     name: str
-    credits_cost: Optional[float] = None
+    credit_cost: float
 
 
 class Usage(BaseModel):
