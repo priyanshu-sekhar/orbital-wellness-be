@@ -63,7 +63,7 @@ async def get_usage():
         return HTTPException(status_code=e.response.status_code, detail=e.response.json())
     except Exception as e:
         # If an unexpected error occurs, return an HTTP 500 error
-        return HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
 # Run the application using uvicorn

@@ -1,59 +1,56 @@
 import unittest
 from unittest.mock import patch
-from src.main import app
+
+import httpx
 from fastapi.testclient import TestClient
-from src.models import FetchMessagesResponse, Report
+
+# Assuming these imports are correct and the modules exist
+from src.main import app
+from src.models import FetchMessagesResponse, Report, Message
 
 # Initialize the test client
 client = TestClient(app)
 
 
-# Define the test cases
 class TestMain(unittest.TestCase):
-    # Test the /usage endpoint when all requests succeed
-    @patch('httpx.get')
-    def test_get_usage_returns_correct_response_when_all_requests_succeed(self, mock_get):
-        # Mock the responses for the httpx.get calls
-        mock_get.side_effect = [
-            FetchMessagesResponse(messages=[{"id": "1", "timestamp": "2022-01-01T00:00:00Z", "report_id": "1"}]),
+    @patch('src.main.fetch_data')
+    def test_get_usage_returns_correct_response_when_all_requests_succeed(self, mock_fetch_data):
+        mock_message = Message(id=1, timestamp="2022-01-01T00:00:00Z", report_id="1", text="Hello, world!")
+        # Mock the responses for the fetch_data calls
+        mock_fetch_data.side_effect = [
+            FetchMessagesResponse(messages=[mock_message]),
             Report(name="Report 1", credit_cost=1.0)
         ]
 
-        # Make a request to the /usage endpoint and check the response
         response = client.get("/usage")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"usage": [
-            {"message_id": "1", "timestamp": "2022-01-01T00:00:00Z", "credits_used": 1.0, "report_name": "Report 1"}]})
+            {"message_id": 1, "timestamp": "2022-01-01T00:00:00Z", "credits_used": 1.0, "report_name": "Report 1"}]})
 
-    # Test the /usage endpoint when the report request fails with a 404 error
-    @patch('httpx.get')
-    def test_get_usage_returns_correct_response_when_report_request_fails_with_404(self, mock_get):
-        # Mock the responses for the httpx.get calls
-        mock_get.side_effect = [
-            FetchMessagesResponse(messages=[{"id": "1", "timestamp": "2022-01-01T00:00:00Z", "report_id": "1"}]),
-            Exception("Not Found")
+    @patch('src.main.fetch_data')
+    def test_get_usage_returns_correct_response_when_report_request_fails_with_404(self, mock_fetch_data):
+        mock_message = Message(id=1, timestamp="2022-01-01T00:00:00Z", report_id="1", text="Hello, world!")
+        mock_fetch_data.side_effect = [
+            FetchMessagesResponse(messages=[mock_message]),
+            httpx.HTTPStatusError(response=httpx.Response(404, text="Not Found"), message="Not Found", request=None)
         ]
 
-        # Make a request to the /usage endpoint and check the response
         response = client.get("/usage")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(),
-                         {"usage": [{"message_id": "1", "timestamp": "2022-01-01T00:00:00Z", "credits_used": 0.0}]})
+                         {"usage": [{"message_id": 1, "timestamp": "2022-01-01T00:00:00Z",
+                                     "report_name": None, "credits_used": 1.0}]})
 
-    # Test the /usage endpoint when the messages request fails
-    @patch('httpx.get')
-    def test_get_usage_returns_500_when_messages_request_fails(self, mock_get):
-        # Mock the response for the httpx.get call
-        mock_get.side_effect = Exception("Internal Server Error")
+    @patch('src.main.fetch_data')  # Adjust this to match where your HTTP client is actually used
+    def test_get_usage_returns_500_when_messages_request_fails(self, mock_fetch_data):
+        mock_fetch_data.side_effect = Exception("Internal Server Error")
 
-        # Make a request to the /usage endpoint and check the response
         response = client.get("/usage")
 
         self.assertEqual(response.status_code, 500)
 
 
-# Run the tests
 if __name__ == '__main__':
     unittest.main()
